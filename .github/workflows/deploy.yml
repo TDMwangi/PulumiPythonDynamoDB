@@ -1,0 +1,62 @@
+name: Pulumi Deployment
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+
+jobs:
+  deploy:
+    name: Deploy infrastructure
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Determine deployment environment
+      id: deployment-environment
+      run: |
+        if [ "${{ github.ref_name }}" == "main" ]; then
+          echo "stack=prod" >> $GITHUB_ENV
+          echo "config_file=Pulumi.prod.yaml" >> $GITHUB_ENV
+        elif [ "${{ github.ref_name }}" == "staging" ]; then
+          echo "stack=staging" >> $GITHUB_ENV
+          echo "config_file=Pulumi.staging.yaml" >> $GITHUB_ENV
+        else:
+          echo "Not on a deployable branch. Exiting."
+          exit 0
+        fi
+    
+    - name: Validate Pulumi config
+      run: |
+        if [ ! -f ${{ env.config_file }} ]; then
+          echo "${{ env.config_file }} not found. Aborting."
+          exit 1
+        fi
+    
+    - name: Set up Pulumi
+      uses: pulumi/actions@v3
+      with:
+        stack-name: ${{ env.stack }}
+        work-dir: .
+    
+    - name: Select Pulumi stack
+      run: pulumi stack select ${{ env.stack }}
+    
+    - name: Pulumi deploy
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      run: pulumi up --yes
