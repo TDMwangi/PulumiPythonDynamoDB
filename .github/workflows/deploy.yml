@@ -49,6 +49,7 @@ jobs:
     - name: Set up Pulumi
       uses: pulumi/actions@v3
       with:
+        command: up
         stack-name: ${{ env.stack }}
         work-dir: .
     
