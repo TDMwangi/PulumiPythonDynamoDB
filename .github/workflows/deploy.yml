@@ -3,8 +3,8 @@ name: Pulumi Deployment
 on:
   push:
     branches:
-      - main
       - staging
+      - main
 
 jobs:
   deploy:
@@ -15,7 +15,7 @@ jobs:
       uses: actions/checkout@v3
     
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: '3.x'
     
@@ -27,13 +27,23 @@ jobs:
     - name: Determine deployment environment
       id: stack
       run: |
-        if [[ $GITHUB_REF == 'refs/heads/main' ]]; then
-          echo "stack=prod" >> $GITHUB_ENV
-        elif [[ $GITHUB_REF == 'refs/heads/staging' ]]; then
+        if [ "${{ github.ref_name }}" == "staging" ]; then
           echo "stack=staging" >> $GITHUB_ENV
+          echo "config_file=Pulumi.staging.yaml" >> $GITHUB_ENV
+        elif [ "${{ github.ref_name }}" == "main" ]; then
+          echo "stack=prod" >> $GITHUB_ENV
+          echo "config_file=Pulumi.prod.yaml" >> $GITHUB_ENV
         else:
           echo "Not on a deployable branch. Exiting."
           exit 0
+        fi
+    
+    - name: Validate Pulumi Config
+      run: |
+        if [ ! -f ${{ env.config_file }} ]; then
+          echo "${{ env.config_file }} not found. Aborting."
+          exit 1
+        fi
     
     - name: Pulumi login
       run: pulumi login --non-interactive
