@@ -29,7 +29,7 @@ jobs:
       run: |
         if [[ $GITHUB_REF == 'refs/heads/main' ]]; then
           echo "stack=prod" >> $GITHUB_ENV
-        elif [[ $GITHUB_REF == 'refs/heads/staging' ]]; the
+        elif [[ $GITHUB_REF == 'refs/heads/staging' ]]; then
           echo "stack=staging" >> $GITHUB_ENV
         else:
           echo "Not on a deployable branch. Exiting."
