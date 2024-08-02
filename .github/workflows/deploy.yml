@@ -27,10 +27,10 @@ jobs:
     - name: Determine deployment environment
       id: stack
       run: |
-        if [[ ${{ github.ref }} == 'refs/heads/main' ]]; then
-          echo "::set-output name=stack::prod"
-        elif [[ ${{ github.ref }} == 'refs/heads/staging' ]]; then
-          echo "::set-output name=stack::staging"
+        if [[ $GITHUB_REF == 'refs/heads/main' ]]; then
+          echo "stack=prod" >> $GITHUB_ENV
+        elif [[ $GITHUB_REF == 'refs/heads/staging' ]]; the
+          echo "stack=staging" >> $GITHUB_ENV
         else:
           echo "Not on a deployable branch. Exiting."
           exit 0
