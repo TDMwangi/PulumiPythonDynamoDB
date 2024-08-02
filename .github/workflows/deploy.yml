@@ -33,7 +33,7 @@ jobs:
           echo "stack=staging" >> $GITHUB_ENV
         else:
           echo "Not on a deployable branch. Exiting."
-          exit 0
+          exit 1
     
     - name: Pulumi login
       run: pulumi login --non-interactive
