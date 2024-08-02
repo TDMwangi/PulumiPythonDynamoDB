@@ -8,7 +8,6 @@ on:
 
 jobs:
   deploy:
-    name: Deploy infrastructure
     runs-on: ubuntu-latest
 
     steps:
@@ -16,49 +15,40 @@ jobs:
       uses: actions/checkout@v3
     
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v2
       with:
-        python-version: '3.10'
+        python-version: '3.x'
+    
+    - name: Install Pulumi
+      run: |
+        curl -fsSL https://get.pulumi.com | sh
+        export PATH=$PATH:$HOME/.pulumi/bin
+    
+    - name: Determine deployment environment
+      id: stack
+      run: |
+        if [[ ${{ github.ref }} == 'refs/heads/main' ]]; then
+          echo "::set-output name=stack::prod"
+        elif [[ ${{ github.ref }} == 'refs/heads/staging' ]]; then
+          echo "::set-output name=stack::staging"
+        else:
+          echo "Not on a deployable branch. Exiting."
+          exit 0
+        fi
+    
+    - name: Pulumi login
+      run: pulumi login ${PULUMI_ACCESS_TOKEN}
     
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     
-    - name: Determine deployment environment
-      id: deployment-environment
-      run: |
-        if [ "${{ github.ref_name }}" == "main" ]; then
-          echo "stack=prod" >> $GITHUB_ENV
-          echo "config_file=Pulumi.prod.yaml" >> $GITHUB_ENV
-        elif [ "${{ github.ref_name }}" == "staging" ]; then
-          echo "stack=staging" >> $GITHUB_ENV
-          echo "config_file=Pulumi.staging.yaml" >> $GITHUB_ENV
-        else:
-          echo "Not on a deployable branch. Exiting."
-          exit 0
-        fi
-    
-    - name: Validate Pulumi config
-      run: |
-        if [ ! -f ${{ env.config_file }} ]; then
-          echo "${{ env.config_file }} not found. Aborting."
-          exit 1
-        fi
-    
-    - name: Set up Pulumi
-      uses: pulumi/actions@v3
-      with:
-        command: up
-        stack-name: ${{ env.stack }}
-        work-dir: .
-    
-    - name: Select Pulumi stack
-      run: pulumi stack select ${{ env.stack }}
-    
     - name: Pulumi deploy
+      run: |
+        pulumi stack select ${{ steps.stack.outputs.stack }}
+        pulumi up --yes
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
-      run: pulumi up --yes
