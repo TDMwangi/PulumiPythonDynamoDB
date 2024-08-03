@@ -27,14 +27,12 @@ jobs:
     - name: Determine deployment environment
       id: stack
       run: |
-        if [[ ${{ github.ref }} == 'refs/heads/main' ]]; then
-          echo "::set-output name=stack::prod"
-        elif [[ ${{ github.ref }} == 'refs/heads/staging' ]]; then
-          echo "::set-output name=stack::staging"
-        else:
-          echo "Not on a deployable branch. Exiting."
-          exit 0
+        if [[ $GITHUB_REF == 'refs/heads/main' ]]; then
+          echo "stack=prod" >> $GITHUB_ENV
+        elif [[ $GITHUB_REF == 'refs/heads/staging' ]]; then
+          echo "stack=staging" >> $GITHUB_ENV
         fi
+      shell: bash
     
     - name: Pulumi login
       run: pulumi login --non-interactive
@@ -48,7 +46,7 @@ jobs:
     
     - name: Pulumi deploy
       run: |
-        pulumi stack select ${{ steps.stack.outputs.stack }}
+        pulumi stack select ${{ env.stack }}
         pulumi up --yes
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
