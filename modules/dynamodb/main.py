@@ -13,7 +13,7 @@ def dynamodb_table():
         name=table_name,
         billing_mode=billing_mode,
         hash_key=hash_key,
-        deletion_protection_enabled=True,
+        deletion_protection_enabled=False,
 
         attributes=[{
             "name": hash_key,
