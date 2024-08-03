@@ -32,7 +32,7 @@ jobs:
         elif [[ $GITHUB_REF == 'refs/heads/staging' ]]; then
           echo "stack=staging" >> $GITHUB_ENV
         else:
-          echo "Not on a deployable branch. Exiting."
+          echo "Not on a deployable branch. Exiting..."
           exit 0
       shell: bash
     
